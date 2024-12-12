@@ -1,4 +1,4 @@
-# Blog App - MERN Stack
+# Blog App - MERN Stack (Backend)
 
 This is a **Blog App** built using the **MERN stack** (MongoDB, Express.js, React.js, and Node.js). It allows users to create, read, update, and delete blog posts with a dynamic and user-friendly interface.
 
