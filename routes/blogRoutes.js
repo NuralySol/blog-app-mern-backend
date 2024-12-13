@@ -1,23 +1,36 @@
 import express from 'express';
-import { getBlogs, getBlogById, createBlog, updateBlog, deleteBlog } from '../controllers/blogController.js';
+import {
+    getBlogs,
+    getBlogById,
+    createBlog,
+    updateBlog,
+    deleteBlog,
+} from '../controllers/blogController.js';
 import { verifyToken, authorizeRoles } from '../middleware/authMiddleware.js';
+import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
 
-// GET all blogs, home route
-router.get('/', getBlogs); // GET is used to retrieve a resource
+// Validation middleware for blog creation/updating
+const validateBlog = [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('content').notEmpty().withMessage('Content is required'),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        next();
+    },
+];
 
-//! POST a new blog an authenticated user and admin, the below routes are protected
-// GET a single blog by ID
-router.get('/:id', verifyToken, getBlogById); // GET is used to retrieve a resource
+// Public Routes
+router.get('/', getBlogs);
+router.get('/:id', getBlogById);
 
-// POST a new blog
-router.post('/', verifyToken, createBlog); // POST is used to create a new resource
-
-// UPDATE a blog by ID
-router.put('/:id', verifyToken, authorizeRoles('admin', 'user'), updateBlog); // Authenticated
-
-// DELETE a blog by ID
-router.delete('/:id', verifyToken, authorizeRoles('admin'), deleteBlog); // Admin only can delete
+// Authenticated Routes
+router.post('/', verifyToken, validateBlog, createBlog);
+router.put('/:id', verifyToken, authorizeRoles('admin', 'user'), validateBlog, updateBlog);
+router.delete('/:id', verifyToken, authorizeRoles('admin'), deleteBlog);
 
 export default router;
