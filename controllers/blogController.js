@@ -1,6 +1,7 @@
 //! This is a controller for the blog page for all CRUD operations. The controller is a function that is called when a route is hit. The controller is responsible for handling the request and sending a response back to the client. The controller is imported into the routes file and used as a callback function for the route. The controller is where the business logic of the application is implemented. The controller is responsible for interacting with the model to retrieve data and send data back to the client
 
 import Blog from '../models/blogModel.js'; // Import the Blog model
+import mongoose from "mongoose"; // ✅ Fix: Import mongoose to validate ObjectId
 
 // GET all blogs
 const getBlogs = async (req, res) => {
@@ -25,13 +26,34 @@ const getBlogById = async (req, res) => {
 
 // Create a new blog
 const createBlog = async (req, res) => {
-    const { title, content, author } = req.body;
     try {
-        const newBlog = new Blog({ title, content, author }); // Create a new blog
-        await newBlog.save(); // Save the new blog
-        res.status(201).json(newBlog); // Send back the created blog
+        console.log("🛠 Incoming Blog Data:", req.body);
+        console.log("✅ User ID from token:", req.user.id); // ✅ Log the user ID
+
+        const { title, content } = req.body;
+
+        if (!title || !content) {
+            console.error("🚨 Missing required fields!");
+            return res.status(400).json({ message: "Title and content are required" });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+            console.error("🚨 Invalid ObjectId for author:", req.user.id);
+            return res.status(400).json({ message: "Invalid user ID" });
+        }
+
+        const newBlog = new Blog({
+            title,
+            content,
+            author: req.user.id, // ✅ Store ObjectId instead of email
+        });
+
+        await newBlog.save();
+
+        res.status(201).json(newBlog);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error("🚨 Server Error:", error.message);
+        res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
 
